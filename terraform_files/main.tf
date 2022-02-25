@@ -36,7 +36,7 @@ module "env" {
 
 module "codepipeline" {
   source           = "./codepipeline"
-  depends_on       = "${module.env}"
+  depends_on       = {module.env}
   for_each         = "${var.environments}"
   env_name         = "${each.value}"
   repository_name  = "${var.repository_name}"
