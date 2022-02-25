@@ -31,12 +31,12 @@ module "env" {
   dbpassword       = "${var.dbpassword}"
   dbsubnet         = ["${module.vpc.rds_subnetgroup}"]
   rds_name         = "${var.rds_name}"
-  vpc_id           = module.vpc.vpc_id
+  vpc_id           = "${module.vpc.vpc_id}"
 }
 
 module "codepipeline" {
   source           = "./codepipeline"
-  depends_on       = {module.env}
+  depends_on       = module.env
   for_each         = "${var.environments}"
   env_name         = "${each.value}"
   repository_name  = "${var.repository_name}"
