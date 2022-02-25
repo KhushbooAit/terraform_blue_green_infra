@@ -36,12 +36,12 @@ module "env" {
 
 module "codepipeline" {
   source           = "./codepipeline"
-  depends_on       = module.env
+  depends_on       = [module.env]
   for_each         = "${var.environments}"
   env_name         = "${each.value}"
   repository_name  = "${var.repository_name}"
   repository_owner = "${var.repository_owner}"
-  #autoscaling_group = module.env[each.key].AutoScaling_Group
+  #autoscaling_group = [module.env[each.key].AutoScaling_Group]
   github_token = "${var.github_token}"
-  #lb_name           = module.env[each.key].LoadBalancer
+  #lb_name           = [module.env[each.key].LoadBalancer]
 }
