@@ -24,7 +24,7 @@ EOF
 
 resource "aws_iam_role_policy" "codepipeline_policy" {
   name = "codepipeline_policy"
-  role = aws_iam_role.codepipeline_role.id
+  role = ["${aws_iam_role.codepipeline_role.id}"]
 
   policy = <<EOF
 {
@@ -62,13 +62,13 @@ EOF
 
 resource "aws_codepipeline" "web_pipeline" {
   name     = join("-", [var.env_name, "pipeline"])
-  role_arn = aws_iam_role.codepipeline_role.arn
+  role_arn = ["${aws_iam_role.codepipeline_role.arn}"]
   tags = {
-    Environment = var.env_name
+    Environment = "${var.env_name}"
   }
 
   artifact_store {
-    location = aws_s3_bucket.codepipeline_bucket.bucket
+    location = "${aws_s3_bucket.codepipeline_bucket.bucket}"
     type     = "S3"
   }
 
@@ -77,11 +77,11 @@ resource "aws_codepipeline" "web_pipeline" {
     action {
       category = "Source"
       configuration = {
-        "OAuthToken"           = var.github_token
-        "Branch"               = lower(var.env_name)
-        "Owner"                = var.repository_owner
+        "OAuthToken"           = "${var.github_token}"
+        "Branch"               = ["${lower(var.env_name)}"]
+        "Owner"                = "${var.repository_owner}"
         "PollForSourceChanges" = "true"
-        "Repo"                 = var.repository_name
+        "Repo"                 = "${var.repository_name}"
       }
       input_artifacts = []
       name            = "Source"
@@ -100,7 +100,7 @@ resource "aws_codepipeline" "web_pipeline" {
     action {
       category = "Build"
       configuration = {
-        "ProjectName" = join("-", [var.env_name, "build"])
+        "ProjectName" = ["${join("-", [var.env_name, "build"])}"]
       }
       input_artifacts = [
         "SourceArtifact",
@@ -127,8 +127,8 @@ resource "aws_codepipeline" "web_pipeline" {
       run_order       = 1
       version         = "1"
       configuration = {
-        ApplicationName     = aws_codedeploy_app.deployment.name
-        DeploymentGroupName = aws_codedeploy_deployment_group.deployment.deployment_group_name
+        ApplicationName     = "${aws_codedeploy_app.deployment.name}"
+        DeploymentGroupName = "${aws_codedeploy_deployment_group.deployment.deployment_group_name}"
       }
     }
   }
@@ -141,7 +141,7 @@ resource "aws_codepipeline" "web_pipeline" {
 
 
 resource "aws_iam_role" "codebuild" {
-  name = join("-", [var.env_name, "codebuild"])
+  name = ["${join("-", [var.env_name, "codebuild"])}"]
 
   assume_role_policy = <<EOF
 {
@@ -160,7 +160,7 @@ EOF
 }
 
 resource "aws_iam_role_policy" "codebuild" {
-  role = aws_iam_role.codebuild.name
+  role = "${aws_iam_role.codebuild.name}"
 
   policy = <<POLICY
 {
@@ -209,9 +209,9 @@ POLICY
 resource "aws_codebuild_project" "web_build" {
   badge_enabled  = false
   build_timeout  = 60
-  name           = join("-", [var.env_name, "build"])
+  name           = ["${join("-", [var.env_name, "build"])}"]
   queued_timeout = 480
-  service_role   = aws_iam_role.codebuild.arn
+  service_role   = ["${aws_iam_role.codebuild.arn}"]
 
   artifacts {
     encryption_disabled    = false
@@ -253,11 +253,11 @@ resource "aws_codebuild_project" "web_build" {
 
 resource "aws_codedeploy_app" "deployment" {
   compute_platform = "Server"
-  name             = join("-", [var.env_name, "deployment"])
+  name             = ["${join("-", [var.env_name, "deployment"])}"]
 }
 
 resource "aws_iam_role" "deployment" {
-  name = join("-", [var.env_name, "deployment-role"])
+  name = ["${join("-", [var.env_name, "deployment-role"])}"]
 
   assume_role_policy = <<EOF
 {
@@ -278,22 +278,22 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "AWSCodeDeployRole" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
-  role       = aws_iam_role.deployment.name
+  role       = ["${aws_iam_role.deployment.name}"]
 }
 
 resource "aws_codedeploy_deployment_group" "deployment" {
-  app_name               = aws_codedeploy_app.deployment.name
-  deployment_group_name  = join("-", [var.env_name, "deployment-group"])
-  service_role_arn       = aws_iam_role.deployment.arn
+  app_name               = ["${aws_codedeploy_app.deployment.name}"]
+  deployment_group_name  = ["${join("-", [var.env_name, "deployment-group"])}"]
+  service_role_arn       = ["${aws_iam_role.deployment.arn}"]
   deployment_config_name = "CodeDeployDefault.OneAtATime" # AWS defined deployment config
-  autoscaling_groups     = [join("_", [var.env_name, "webserver"])]
+  autoscaling_groups     = ["${[join("_", [var.env_name, "webserver"])]}"]
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN"
   }
   load_balancer_info {
     target_group_info {
-      name = join("-", [var.env_name, "target-group"])
+      name = ["${join("-", [var.env_name, "target-group"])}"]
     }
   }
   blue_green_deployment_config {
